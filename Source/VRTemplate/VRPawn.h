@@ -72,7 +72,7 @@ protected:
 	virtual void LeftHandXAxis(float val);
 	virtual void LeftHandYAxis(float val);
 	virtual void LeftHandTriggerAxis(float val);
-	virtual void LeftThumbstick();
+	virtual void LeftHandThumbstick();
 	virtual void LeftHandTrigger();
 	virtual void LeftHandXButton();
 	virtual void LeftHandYButton();
@@ -80,7 +80,7 @@ protected:
 	virtual void RightHandXAxis(float val);
 	virtual void RightHandYAxis(float val);
 	virtual void RightHandTriggerAxis(float val);
-	virtual void RightThumbstick();
+	virtual void RightHandThumbstick();
 	virtual void RightHandTrigger();
 	virtual void RightHandAButton();
 	virtual void RightHandBButton();

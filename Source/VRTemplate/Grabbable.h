@@ -21,12 +21,15 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UPrimitiveComponent* hand);
 
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabInputTriggerAction(class UPrimitiveComponent* hand);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabInputXAxis(class UPrimitiveComponent* hand, float value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabInputYAxis(class UPrimitiveComponent* hand, float value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabInputTriggerAxis(class UPrimitiveComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton1(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton2(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputThumbstick(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTrigger(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputXAxis(class UPrimitiveComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputYAxis(class UPrimitiveComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTriggerAxis(class UPrimitiveComponent* hand, float value);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UPrimitiveComponent* hand);
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UPrimitiveComponent* hand);
 };

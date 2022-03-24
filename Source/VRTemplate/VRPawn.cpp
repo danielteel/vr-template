@@ -49,6 +49,25 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent){
 
 	PlayerInputComponent->BindAction(FName("GrabRight"), EInputEvent::IE_Pressed, this, &AVRPawn::RightHandGrab);
 	PlayerInputComponent->BindAction(FName("GrabRight"), EInputEvent::IE_Released, this, &AVRPawn::RightHandRelease);
+
+	PlayerInputComponent->BindAction(FName("LeftHandThumbstick"), EInputEvent::IE_Pressed, this, &AVRPawn::LeftHandThumbstick);
+	PlayerInputComponent->BindAction(FName("LeftHandTrigger"), EInputEvent::IE_Pressed, this, &AVRPawn::LeftHandTrigger);
+	PlayerInputComponent->BindAction(FName("LeftHandXButton"), EInputEvent::IE_Pressed, this, &AVRPawn::LeftHandXButton);
+	PlayerInputComponent->BindAction(FName("LeftHandYButton"), EInputEvent::IE_Pressed, this, &AVRPawn::LeftHandYButton);
+
+	PlayerInputComponent->BindAction(FName("RightHandThumbstick"), EInputEvent::IE_Pressed, this, &AVRPawn::RightHandThumbstick);
+	PlayerInputComponent->BindAction(FName("RightHandTrigger"), EInputEvent::IE_Pressed, this, &AVRPawn::RightHandTrigger);
+	PlayerInputComponent->BindAction(FName("RightHandAButton"), EInputEvent::IE_Pressed, this, &AVRPawn::RightHandAButton);
+	PlayerInputComponent->BindAction(FName("RightHandBButton"), EInputEvent::IE_Pressed, this, &AVRPawn::RightHandBButton);
+
+
+	PlayerInputComponent->BindAxis(FName("LeftHandXAxis"), this, &AVRPawn::LeftHandXAxis);
+	PlayerInputComponent->BindAxis(FName("LeftHandYAxis"), this, &AVRPawn::LeftHandYAxis);
+	PlayerInputComponent->BindAxis(FName("LeftHandTriggerAxis"), this, &AVRPawn::LeftHandTriggerAxis);
+
+	PlayerInputComponent->BindAxis(FName("RightHandXAxis"), this, &AVRPawn::RightHandXAxis);
+	PlayerInputComponent->BindAxis(FName("RightHandYAxis"), this, &AVRPawn::RightHandYAxis);
+	PlayerInputComponent->BindAxis(FName("RightHandTriggerAxis"), this, &AVRPawn::RightHandTriggerAxis);
 }
 
 
@@ -93,7 +112,53 @@ void AVRPawn::LeftHandMenuButton() {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(GetVRResetYaw(), EOrientPositionSelector::OrientationAndPosition);
 }
 
-//Overrideable input actions
+
+
+void AVRPawn::LeftHandXAxis(float val) {
+	if (LeftController) LeftController->XAxis(val);
+}
+void AVRPawn::LeftHandYAxis(float val) {
+	if (LeftController) LeftController->YAxis(val);
+}
+void AVRPawn::LeftHandTriggerAxis(float val) {
+	if (LeftController) LeftController->TriggerAxis(val);
+}
+void AVRPawn::LeftHandThumbstick() {
+	if (LeftController) LeftController->Thumbstick();
+}
+void AVRPawn::LeftHandTrigger() {
+	if (LeftController) LeftController->Trigger();
+}
+void AVRPawn::LeftHandXButton() {
+	if (LeftController) LeftController->Button1();
+}
+void AVRPawn::LeftHandYButton() {
+	if (LeftController) LeftController->Button2();
+}
+
+void AVRPawn::RightHandXAxis(float val) {
+	if (RightController) RightController->XAxis(val);
+}
+void AVRPawn::RightHandYAxis(float val) {
+	if (RightController) RightController->YAxis(val);
+}
+void AVRPawn::RightHandTriggerAxis(float val) {
+	if (RightController) RightController->TriggerAxis(val);
+}
+void AVRPawn::RightHandThumbstick() {
+	if (RightController) RightController->Thumbstick();
+}
+void AVRPawn::RightHandTrigger() {
+	if (RightController) RightController->Trigger();
+}
+void AVRPawn::RightHandAButton() {
+	if (RightController) RightController->Button1();
+}
+void AVRPawn::RightHandBButton() {
+	if (RightController) RightController->Button2();
+}
+
+
 void AVRPawn::GamepadLeftXAxis(float val) {}
 void AVRPawn::GamepadLeftYAxis(float val) {}
 void AVRPawn::GamepadRightXAxis(float val) {}
@@ -106,19 +171,3 @@ void AVRPawn::GamepadButtonTop() {}
 void AVRPawn::GamepadButtonRight() {}
 void AVRPawn::GamepadButtonBottom() {}
 void AVRPawn::GamepadButtonLeft() {}
-
-void AVRPawn::LeftHandXAxis(float val) {}
-void AVRPawn::LeftHandYAxis(float val) {}
-void AVRPawn::LeftHandTriggerAxis(float val) {}
-void AVRPawn::LeftThumbstick() {}
-void AVRPawn::LeftHandTrigger() {}
-void AVRPawn::LeftHandXButton() {}
-void AVRPawn::LeftHandYButton() {}
-
-void AVRPawn::RightHandXAxis(float val) {};
-void AVRPawn::RightHandYAxis(float val) {};
-void AVRPawn::RightHandTriggerAxis(float val) {}
-void AVRPawn::RightThumbstick() {}
-void AVRPawn::RightHandTrigger() {}
-void AVRPawn::RightHandAButton() {}
-void AVRPawn::RightHandBButton() {}

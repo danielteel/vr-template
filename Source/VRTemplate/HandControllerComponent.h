@@ -23,6 +23,13 @@ public:
 
 	void Grab();
 	void ReleaseGrab();
+	void XAxis(float val);
+	void YAxis(float val);
+	void TriggerAxis(float val);
+	void Thumbstick();
+	void Trigger();
+	void Button1();
+	void Button2();
 
 	USceneComponent* GetGrabbedComponent() { return GrabbedComponent; }
 

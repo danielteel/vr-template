@@ -18,7 +18,7 @@ void UHandControllerComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (GrabbedComponent) {
-		IGrabbable::Execute_GrabTick(GrabbedComponent, this);////update this with new scheme
+		IGrabbable::Execute_GrabTick(GrabbedComponent, this);
 	}
 }
 
@@ -50,8 +50,9 @@ UPrimitiveComponent* UHandControllerComponent::GetComponentToGrab() {
 	if (result) {
 		float distanceToGrab = 0.0f;
 		for (int i = 0; i < outComponents.Num(); i++) {
-			IGrabbable* grabbableObject = Cast<IGrabbable>(outComponents[i]);
-			if (grabbableObject) {
+			//IGrabbable* grabbableObject = Cast<IGrabbable>(outComponents[i]);
+			bool isGrabbableObject = outComponents[i]->Implements<UGrabbable>();
+			if (isGrabbableObject) {
 
 				float distToObj = FVector::Dist(handLocation, outComponents[i]->GetComponentLocation());
 				if (distToObj < distanceToGrab || componentToGrab == nullptr) {
@@ -68,14 +69,15 @@ UPrimitiveComponent* UHandControllerComponent::GetComponentToGrab() {
 void UHandControllerComponent::Grab() {	
 	USceneComponent* componentToGrab = GetComponentToGrab();
 	if (componentToGrab) {
-		componentToGrab = IGrabbable::Execute_GetComponentToGrab(componentToGrab);
-
-		UHandControllerComponent* otherHand = GetOtherHand();
-		if (otherHand) {
-			if (otherHand->GrabbedComponent == componentToGrab) otherHand->ReleaseGrab();
+		USceneComponent* actualComponentToGrab = IGrabbable::Execute_GetComponentToGrab(componentToGrab);
+		if (actualComponentToGrab) {
+			UHandControllerComponent* otherHand = GetOtherHand();
+			if (otherHand) {
+				if (otherHand->GrabbedComponent == actualComponentToGrab) otherHand->ReleaseGrab();
+			}
+			IGrabbable::Execute_GrabStart(actualComponentToGrab, this);
+			GrabbedComponent = actualComponentToGrab;
 		}
-		IGrabbable::Execute_GrabStart(componentToGrab, this);
-		GrabbedComponent = componentToGrab;
 	}
 }
 
@@ -84,4 +86,26 @@ void UHandControllerComponent::ReleaseGrab() {
 		IGrabbable::Execute_GrabEnd(GrabbedComponent, this);
 		GrabbedComponent = nullptr;
 	}
+}
+
+void UHandControllerComponent::XAxis(float val){
+	if (GrabbedComponent) IGrabbable::Execute_InputXAxis(GrabbedComponent, this, val);
+}
+void UHandControllerComponent::YAxis(float val){
+	if (GrabbedComponent) IGrabbable::Execute_InputYAxis(GrabbedComponent, this, val);
+}
+void UHandControllerComponent::TriggerAxis(float val){
+	if (GrabbedComponent) IGrabbable::Execute_InputTriggerAxis(GrabbedComponent, this, val);
+}
+void UHandControllerComponent::Thumbstick(){
+	if (GrabbedComponent) IGrabbable::Execute_InputThumbstick(GrabbedComponent, this);
+}
+void UHandControllerComponent::Trigger(){
+	if (GrabbedComponent) IGrabbable::Execute_InputTrigger(GrabbedComponent, this);
+}
+void UHandControllerComponent::Button1(){
+	if (GrabbedComponent) IGrabbable::Execute_InputButton1(GrabbedComponent, this);
+}
+void UHandControllerComponent::Button2(){
+	if (GrabbedComponent) IGrabbable::Execute_InputButton2(GrabbedComponent, this);
 }
