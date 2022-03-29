@@ -13,7 +13,7 @@ ULeverHandle::ULeverHandle() {
 }
 
 
-void ULeverHandle::Setup(float minPitch, float maxPitch, float initialPitch, ULever* owner) {
+void ULeverHandle::Setup(float minPitch, float maxPitch, float initialPitch, ALever* owner) {
 	MinPitch = minPitch;
 	MaxPitch = maxPitch;
 	Owner = owner;
@@ -47,6 +47,10 @@ void ULeverHandle::SetTargetPitch(float targetPitch) {
 
 USceneComponent* ULeverHandle::GetComponentToGrab_Implementation() {
 	return this;
+}
+
+EGrabType ULeverHandle::GetGrabType_Implementation() {
+	return EGrabType::Custom;
 }
 
 void ULeverHandle::GrabStart_Implementation(UPrimitiveComponent * hand) {

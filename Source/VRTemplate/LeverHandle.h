@@ -20,10 +20,13 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SetTargetPitch(float pitch);
-	void Setup(float minPitch, float maxPitch, float initialPitch, class ULever* owner);
+	void Setup(float minPitch, float maxPitch, float initialPitch, class ALever* owner);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") USceneComponent* GetComponentToGrab();
 	virtual USceneComponent* GetComponentToGrab_Implementation() override;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") EGrabType GetGrabType();
+	virtual EGrabType GetGrabType_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UPrimitiveComponent* hand);
 	virtual void GrabStart_Implementation(class UPrimitiveComponent* hand) override;
@@ -36,7 +39,7 @@ public:
 
 private:
 	UPROPERTY()
-	class ULever* Owner = nullptr;
+	class ALever* Owner = nullptr;
 
 	FVector GrabOffset;
 

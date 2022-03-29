@@ -40,6 +40,13 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UHandControllerComponent* RightController;
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UGrabberComponent* LeftGrabber;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UGrabberComponent* RightGrabber;
+
+
 protected:
 	virtual void BeginPlay() override;
 

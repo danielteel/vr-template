@@ -1,43 +1,57 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Lever.h"
+#include "LeverHandle.h"
 
 
-void ULever::OnRegister() {
-	Super::OnRegister();
+ALever::ALever(){
+	PrimaryActorTick.bCanEverTick = true;
 
-	BaseComponent = NewObject<UStaticMeshComponent>(this, FName("Base"));
-	BaseComponent->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	BaseComponent->RegisterComponent();
-	BaseComponent->SetStaticMesh(BaseMesh);
 
-	LeverHandleComponent = NewObject<ULeverHandle>(this, FName("Handle"));
-	LeverHandleComponent->AttachToComponent(BaseComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	LeverHandleComponent->RegisterComponent();
-	LeverHandleComponent->SetStaticMesh(LeverHandleMesh);
-	LeverHandleComponent->Setup(MinPitch, MaxPitch, MinPitch, this);
+	Base = CreateDefaultSubobject<UStaticMeshComponent>(FName("Base"));
+	SetRootComponent(Base);
+
+	Handle = CreateDefaultSubobject<ULeverHandle>(FName("Handle"));
+	Handle->SetupAttachment(Base);
+
 }
 
+void ALever::PreRegisterAllComponents() {
+	Super::PreRegisterAllComponents();
+	Base->SetStaticMesh(BaseMesh);
+	Handle->SetStaticMesh(LeverHandleMesh);
+	float leverAlpha = float(CurrentValue) / (float(Positions) - 1);
+	Handle->Setup(MinPitch, MaxPitch, FMath::Lerp(MinPitch, MaxPitch, leverAlpha), this);
+}
 
-void ULever::SetLeverValue(int value) {
-	value = FMath::Clamp(value, 0, Positions-1);
+void ALever::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+void ALever::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+void ALever::SetLeverValue(int value) {
+	value = FMath::Clamp(value, 0, Positions - 1);
 	CurrentValue = value;
 	float leverAlpha = float(value) / (float(Positions) - 1);
-	LeverHandleComponent->SetTargetPitch(FMath::Lerp(MinPitch, MaxPitch, leverAlpha));
+	Handle->SetTargetPitch(FMath::Lerp(MinPitch, MaxPitch, leverAlpha));
 	OnLeverChanged.Broadcast(CurrentValue);
 }
 
 
-void ULever::LeverChanging(float pitch, bool endOfChanging) {
+void ALever::LeverChanging(float pitch, bool endOfChanging) {
 	float delta = MaxPitch - MinPitch;
 	float value = 1.0f - (MaxPitch - pitch) / delta;
 	float divider = delta / float(Positions);
-	int step = FMath::Clamp(int((value * delta) / divider), 0, Positions-1);
+	int step = FMath::Clamp(int((value * delta) / divider), 0, Positions - 1);
 
 	float newTargetPitch = FMath::Lerp(MinPitch, MaxPitch, float(step) / (float(Positions) - 1));
 
-	LeverHandleComponent->SetTargetPitch(newTargetPitch);
+	Handle->SetTargetPitch(newTargetPitch);
 	if (CurrentValue != step || endOfChanging) {
 		CurrentValue = step;
 		if (endOfChanging) {

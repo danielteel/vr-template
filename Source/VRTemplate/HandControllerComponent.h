@@ -18,9 +18,6 @@ public:
 	UHandControllerComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-
-	UPrimitiveComponent* GetComponentToGrab();
-
 	void Grab();
 	void ReleaseGrab();
 	void XAxis(float val);
@@ -31,18 +28,14 @@ public:
 	void Button1();
 	void Button2();
 
-	USceneComponent* GetGrabbedComponent() { return GrabbedComponent; }
 
 protected:
-	UPROPERTY(EditAnywhere)
-	float GrabDistance = 10.0f;
-
-	UPROPERTY()
-	class USceneComponent* GrabbedComponent = nullptr;
-
-	UPROPERTY()
-	class USceneComponent* HighlightedComponent = nullptr;
-
 	UFUNCTION()
 	UHandControllerComponent* GetOtherHand();
+	
+	UFUNCTION()
+	class UGrabberComponent * GetGrabberComponent();
+
+	UPROPERTY()
+	class UGrabberComponent* CachedGrabberComponent = nullptr;
 };

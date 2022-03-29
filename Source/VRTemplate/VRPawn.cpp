@@ -8,6 +8,8 @@
 #include "HeadMountedDisplay/Public/MotionControllerComponent.h"
 #include "HeadMountedDisplay/Public/HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "GrabberComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 // Sets default values
 AVRPawn::AVRPawn(){
@@ -26,9 +28,16 @@ AVRPawn::AVRPawn(){
 	LeftController->SetupAttachment(VRRoot);
 	LeftController->SetTrackingSource(EControllerHand::Left);
 
+	LeftGrabber = CreateDefaultSubobject<UGrabberComponent>(FName("LeftGrabber"));
+	LeftGrabber->SetupAttachment(LeftController);
+
 	RightController = CreateDefaultSubobject<UHandControllerComponent>(FName("RightHand"));
 	RightController->SetupAttachment(VRRoot);
 	RightController->SetTrackingSource(EControllerHand::Right);
+
+	RightGrabber = CreateDefaultSubobject<UGrabberComponent>(FName("RightGrabber"));
+	RightGrabber->SetupAttachment(RightController);
+
 }
 
 void AVRPawn::BeginPlay(){
