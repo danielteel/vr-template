@@ -16,7 +16,7 @@ UGrabberComponent::UGrabberComponent() {
 void UGrabberComponent::BeginPlay() {
 	Super::BeginPlay();
 
-	PhysicsConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("PhysicsHandle"));
+	PhysicsConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("PhysicsConstraint"));
 	PhysicsConstraint->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	PhysicsConstraint->SetWorldLocation(GetComponentLocation());
 
@@ -27,7 +27,7 @@ void UGrabberComponent::BeginPlay() {
 	ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
 	ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
 	ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 5000.0f;
+	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 2000.0f;
 	ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = 1.0f;
 	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
 
@@ -48,9 +48,14 @@ void UGrabberComponent::BeginPlay() {
 
 	PhysicsConstraint->ConstraintInstance = ConstraintInstance;
 	PhysicsConstraint->InitComponentConstraint();
+}
 
-
-
+void UGrabberComponent::BeginDestroy() {
+	Super::BeginDestroy();
+	if (PhysicsConstraint) {
+		PhysicsConstraint->BreakConstraint();
+		PhysicsConstraint->DestroyComponent();
+	}
 }
 
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
@@ -59,9 +64,9 @@ void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	DrawDebugLine(GetWorld(), GetComponentLocation(), PhysicsConstraint->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
 	if (GrabbedComponent){
 		if (ActorProxy) {
-			IGrabbable::Execute_GrabTick(ActorProxy, GetHandController());
+			IGrabbable::Execute_GrabTick(ActorProxy, this);
 		} else {
-			IGrabbable::Execute_GrabTick(GrabbedComponent, GetHandController());
+			IGrabbable::Execute_GrabTick(GrabbedComponent, this);
 		}
 	}
 }
@@ -151,9 +156,9 @@ void UGrabberComponent::Grab() {
 			if (otherGrabber->GrabbedComponent == actualComponentToGrab) otherGrabber->ReleaseGrab();
 		}
 		if (ActorProxy) {
-			IGrabbable::Execute_GrabStart(ActorProxy, GetHandController());
+			IGrabbable::Execute_GrabStart(ActorProxy, this);
 		} else {
-			IGrabbable::Execute_GrabStart(actualComponentToGrab, GetHandController());
+			IGrabbable::Execute_GrabStart(actualComponentToGrab, this);
 		}
 
 		GrabbedComponent = actualComponentToGrab;
@@ -185,9 +190,9 @@ void UGrabberComponent::Grab() {
 void UGrabberComponent::ReleaseGrab() {
 	if (GrabbedComponent) {
 		if (ActorProxy) {
-			IGrabbable::Execute_GrabEnd(ActorProxy, GetHandController());
+			IGrabbable::Execute_GrabEnd(ActorProxy, this);
 		} else {
-			IGrabbable::Execute_GrabEnd(GrabbedComponent, GetHandController());
+			IGrabbable::Execute_GrabEnd(GrabbedComponent, this);
 		}
 
 		if (GrabType == EGrabType::Free) {
@@ -214,50 +219,50 @@ void UGrabberComponent::ReleaseGrab() {
 
 void UGrabberComponent::XAxis(float val) {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputXAxis(ActorProxy, GetHandController(), val);
+		IGrabbable::Execute_InputXAxis(ActorProxy, this, val);
 	} else if (GrabbedComponent){
-		IGrabbable::Execute_InputXAxis(GrabbedComponent, GetHandController(), val);
+		IGrabbable::Execute_InputXAxis(GrabbedComponent, this, val);
 	}
 }
 void UGrabberComponent::YAxis(float val) {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputYAxis(ActorProxy, GetHandController(), val);
+		IGrabbable::Execute_InputYAxis(ActorProxy, this, val);
 	} else if (GrabbedComponent) {
-		IGrabbable::Execute_InputYAxis(GrabbedComponent, GetHandController(), val);
+		IGrabbable::Execute_InputYAxis(GrabbedComponent, this, val);
 	}
 }
 void UGrabberComponent::TriggerAxis(float val) {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputTriggerAxis(ActorProxy, GetHandController(), val);
+		IGrabbable::Execute_InputTriggerAxis(ActorProxy, this, val);
 	} else if (GrabbedComponent) {
-		IGrabbable::Execute_InputTriggerAxis(GrabbedComponent, GetHandController(), val);
+		IGrabbable::Execute_InputTriggerAxis(GrabbedComponent, this, val);
 	}
 }
 void UGrabberComponent::Thumbstick() {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputThumbstick(ActorProxy, GetHandController());
+		IGrabbable::Execute_InputThumbstick(ActorProxy, this);
 	}else if (GrabbedComponent){
-		IGrabbable::Execute_InputThumbstick(GrabbedComponent, GetHandController());
+		IGrabbable::Execute_InputThumbstick(GrabbedComponent, this);
 	}
 }
 void UGrabberComponent::Trigger() {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputTrigger(ActorProxy, GetHandController());
+		IGrabbable::Execute_InputTrigger(ActorProxy, this);
 	} else if (GrabbedComponent){
-		IGrabbable::Execute_InputTrigger(GrabbedComponent, GetHandController());
+		IGrabbable::Execute_InputTrigger(GrabbedComponent, this);
 	}
 }
 void UGrabberComponent::Button1() {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputButton1(ActorProxy, GetHandController());
+		IGrabbable::Execute_InputButton1(ActorProxy, this);
 	} else if (GrabbedComponent) {
-		IGrabbable::Execute_InputButton1(GrabbedComponent, GetHandController());
+		IGrabbable::Execute_InputButton1(GrabbedComponent, this);
 	}
 }
 void UGrabberComponent::Button2() {
 	if (ActorProxy) {
-		IGrabbable::Execute_InputButton2(ActorProxy, GetHandController());
+		IGrabbable::Execute_InputButton2(ActorProxy, this);
 	} else if (GrabbedComponent) {
-		IGrabbable::Execute_InputButton2(GrabbedComponent, GetHandController());
+		IGrabbable::Execute_InputButton2(GrabbedComponent, this);
 	}
 }

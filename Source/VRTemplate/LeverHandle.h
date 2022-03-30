@@ -28,14 +28,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") EGrabType GetGrabType();
 	virtual EGrabType GetGrabType_Implementation() override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UPrimitiveComponent* hand);
-	virtual void GrabStart_Implementation(class UPrimitiveComponent* hand) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UGrabberComponent* hand);
+	virtual void GrabStart_Implementation(class UGrabberComponent* hand) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UPrimitiveComponent* hand);
-	virtual void GrabEnd_Implementation(class UPrimitiveComponent* hand) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UGrabberComponent* hand);
+	virtual void GrabEnd_Implementation(class UGrabberComponent* hand) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UPrimitiveComponent* hand);
-	virtual void GrabTick_Implementation(class UPrimitiveComponent* hand) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand);
+	virtual void GrabTick_Implementation(class UGrabberComponent* hand) override;
 
 private:
 	UPROPERTY()

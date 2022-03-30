@@ -4,6 +4,7 @@
 #include "Hoist.h"
 #include "Components/StaticMeshComponent.h"
 #include "CableComponent.h"
+#include "Hook.h"
 #include "Components/SphereComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
@@ -15,7 +16,7 @@ void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USc
 	cable->bEnableStiffness = true;
 	cable->SolverIterations = 32;
 	cable->SetEnableGravity(true);
-	cable->bEnableCollision = true;
+	cable->bEnableCollision = false;
 	cable->EndLocation = FVector(0.0f);
 	cable->SetAttachEndToComponent(component2);
 	cable->CableWidth = width;
@@ -35,7 +36,7 @@ AHoist::AHoist(){
 	Base->InitSphereRadius(1.f);
 	Base->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
-	Hook = CreateDefaultSubobject<UStaticMeshComponent>(FName("Hook"));
+	Hook = CreateDefaultSubobject<UHook>(FName("Hook"));
 	Hook->SetupAttachment(Base);
 
 	Constraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("Constraint"));
@@ -54,7 +55,7 @@ void AHoist::PreRegisterAllComponents() {
 	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 3.0f, 5, 1.0f);
 	SetupCable(BaseToHook, Base, Hook, CableMaterial, 3.0f, 50, 1.0f);
 	Boomhead->SetStaticMesh(BoomMesh);
-	Hook->SetStaticMesh(HookMesh);
+	if (Hook) Hook->SetStaticMesh(HookMesh);
 }
 
 void AHoist::BeginPlay(){

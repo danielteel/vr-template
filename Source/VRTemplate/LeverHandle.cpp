@@ -2,6 +2,7 @@
 
 
 #include "LeverHandle.h"
+#include "GrabberComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/Quat.h"
 #include "Lever.h"
@@ -53,17 +54,17 @@ EGrabType ULeverHandle::GetGrabType_Implementation() {
 	return EGrabType::Custom;
 }
 
-void ULeverHandle::GrabStart_Implementation(UPrimitiveComponent * hand) {
+void ULeverHandle::GrabStart_Implementation(UGrabberComponent * hand) {
 	GrabOffset = GetSocketLocation(FName("Handle")) - hand->GetComponentLocation();
 }
 
-void ULeverHandle::GrabEnd_Implementation(UPrimitiveComponent * hand) {
+void ULeverHandle::GrabEnd_Implementation(UGrabberComponent * hand) {
 	if (Owner) {
 		Owner->LeverChanging(CurrentPitch, true);
 	}
 }
 
-void ULeverHandle::GrabTick_Implementation(UPrimitiveComponent * hand) {
+void ULeverHandle::GrabTick_Implementation(UGrabberComponent * hand) {
 	FVector inverseTransform = UKismetMathLibrary::InverseTransformLocation(GetAttachParent()->GetComponentTransform(), hand->GetComponentLocation()+GrabOffset);
 	FVector unrotatedVector = FRotator(90.f, 0.0f, 0.0f).UnrotateVector(inverseTransform);
 	float pitch = FMath::RadiansToDegrees(UKismetMathLibrary::Atan2(unrotatedVector.Z, unrotatedVector.X));

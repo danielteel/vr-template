@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Grabbable.h"
 #include "Hoist.generated.h"
 
 UCLASS()
-class VRTEMPLATE_API AHoist : public AActor, public IGrabbable
+class VRTEMPLATE_API AHoist : public AActor
 {
 	GENERATED_BODY()
 	
@@ -17,9 +16,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") USceneComponent* GetComponentToGrab();
-	virtual USceneComponent* GetComponentToGrab_Implementation() override { return Boomhead; };
 
 protected:
 	virtual void BeginPlay() override;
@@ -51,7 +47,7 @@ protected:
 		class USphereComponent* Base = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
-		class UStaticMeshComponent* Hook = nullptr;
+		class UHook* Hook = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
 		class UPhysicsConstraintComponent* Constraint = nullptr;
@@ -68,10 +64,10 @@ private:
 	void FixStuckCable(); 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		float ExtendCommand = 0.0f;
+	float ExtendCommand = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		float HoistOutLength = 0.0f;
+	float HoistOutLength = 0.0f;
 
 	float HoistLimitDist = 426.72f;
 	float HoistMaxLength = 7620.0f;
@@ -88,11 +84,11 @@ private:
 
 public:	
 	UFUNCTION(BlueprintCallable)
-		void SetExtendCommand(float val);
+	void SetExtendCommand(float val);
 
 	UFUNCTION(BlueprintCallable)
-		bool IsJettisoned();
+	bool IsJettisoned();
 
 	UFUNCTION(BlueprintCallable)
-		void Jettison();
+	void Jettison();
 };

@@ -20,12 +20,14 @@ public:
 	UGrabberComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
+	virtual void BeginDestroy() override;
 
 	UPROPERTY(VisibleAnywhere)
 	class UPhysicsConstraintComponent* PhysicsConstraint = nullptr;
 
 	class UPrimitiveComponent * GetHandController();
-
+	class USceneComponent* GetGrabbedComponent() { return GrabbedComponent; }
+	class UPrimitiveComponent* GetGrabbedPrimitiveComponent() { return Cast<UPrimitiveComponent>(GrabbedComponent); }
 	class UPrimitiveComponent* GetComponentToGrab(AActor*& actorProxy);
 
 	UGrabberComponent * GetOtherGrabber();

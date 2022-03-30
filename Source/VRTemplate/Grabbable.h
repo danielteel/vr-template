@@ -30,17 +30,17 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") class USceneComponent* GetComponentToGrab();
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabStart(class UGrabberComponent* hand);
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton1(class UPrimitiveComponent* hand);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton2(class UPrimitiveComponent* hand);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputThumbstick(class UPrimitiveComponent* hand);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTrigger(class UPrimitiveComponent* hand);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputXAxis(class UPrimitiveComponent* hand, float value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputYAxis(class UPrimitiveComponent* hand, float value);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTriggerAxis(class UPrimitiveComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton1(class UGrabberComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputButton2(class UGrabberComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputThumbstick(class UGrabberComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTrigger(class UGrabberComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputXAxis(class UGrabberComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputYAxis(class UGrabberComponent* hand, float value);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTriggerAxis(class UGrabberComponent* hand, float value);
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand);
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UPrimitiveComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UGrabberComponent* hand);
 };
