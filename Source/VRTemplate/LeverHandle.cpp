@@ -64,7 +64,7 @@ void ULeverHandle::GrabEnd_Implementation(UGrabberComponent * hand) {
 	}
 }
 
-void ULeverHandle::GrabTick_Implementation(UGrabberComponent * hand) {
+void ULeverHandle::GrabTick_Implementation(UGrabberComponent * hand, float deltaTime) {
 	FVector inverseTransform = UKismetMathLibrary::InverseTransformLocation(GetAttachParent()->GetComponentTransform(), hand->GetComponentLocation()+GrabOffset);
 	FVector unrotatedVector = FRotator(90.f, 0.0f, 0.0f).UnrotateVector(inverseTransform);
 	float pitch = FMath::RadiansToDegrees(UKismetMathLibrary::Atan2(unrotatedVector.Z, unrotatedVector.X));

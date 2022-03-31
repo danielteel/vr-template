@@ -20,7 +20,8 @@ public:
 	UGrabberComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
-	virtual void BeginDestroy() override;
+
+	virtual void OnDestroyPhysicsState() override;
 
 	UPROPERTY(VisibleAnywhere)
 	class UPhysicsConstraintComponent* PhysicsConstraint = nullptr;
@@ -48,6 +49,7 @@ public:
 	UPROPERTY()
 	USceneComponent* GrabbedComponent = nullptr;
 
+	FVector InitialGrabOffset;
 
 	bool WasGrabbedSimulatingPhysics = false;
 	FBodyInstance OldBodyInstance;

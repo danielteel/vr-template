@@ -25,7 +25,9 @@ void ALever::PreRegisterAllComponents() {
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	OnLeverChanging.Broadcast(CurrentValue);
+	OnLeverChanged.Broadcast(CurrentValue);
 }
 
 void ALever::Tick(float DeltaTime)
@@ -35,10 +37,12 @@ void ALever::Tick(float DeltaTime)
 }
 
 void ALever::SetLeverValue(int value) {
+	if (value == CurrentValue) return;
 	value = FMath::Clamp(value, 0, Positions - 1);
 	CurrentValue = value;
 	float leverAlpha = float(value) / (float(Positions) - 1);
 	Handle->SetTargetPitch(FMath::Lerp(MinPitch, MaxPitch, leverAlpha));
+	OnLeverChanging.Broadcast(CurrentValue);
 	OnLeverChanged.Broadcast(CurrentValue);
 }
 
@@ -54,10 +58,9 @@ void ALever::LeverChanging(float pitch, bool endOfChanging) {
 	Handle->SetTargetPitch(newTargetPitch);
 	if (CurrentValue != step || endOfChanging) {
 		CurrentValue = step;
+		OnLeverChanging.Broadcast(CurrentValue);
 		if (endOfChanging) {
 			OnLeverChanged.Broadcast(CurrentValue);
-		} else {
-			OnLeverChanging.Broadcast(CurrentValue);
 		}
 	}
 }

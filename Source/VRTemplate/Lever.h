@@ -22,6 +22,8 @@ protected:
 	virtual void BeginPlay() override;
 	
 	friend class ULeverHandle;
+
+	UFUNCTION(BlueprintCallable, Category = "Lever")
 	void SetLeverValue(int value);
 	void LeverChanging(float pitch, bool endOfChanging);
 

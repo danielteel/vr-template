@@ -34,8 +34,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UGrabberComponent* hand);
 	virtual void GrabEnd_Implementation(class UGrabberComponent* hand) override;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand);
-	virtual void GrabTick_Implementation(class UGrabberComponent* hand) override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand, float deltaTime);
+	virtual void GrabTick_Implementation(class UGrabberComponent* hand, float deltaTime) override;
 
 private:
 	UPROPERTY()

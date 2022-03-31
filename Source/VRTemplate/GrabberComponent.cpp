@@ -9,8 +9,6 @@
 
 UGrabberComponent::UGrabberComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
-
-
 }
 
 void UGrabberComponent::BeginPlay() {
@@ -50,12 +48,13 @@ void UGrabberComponent::BeginPlay() {
 	PhysicsConstraint->InitComponentConstraint();
 }
 
-void UGrabberComponent::BeginDestroy() {
-	Super::BeginDestroy();
+void UGrabberComponent::OnDestroyPhysicsState() {
 	if (PhysicsConstraint) {
 		PhysicsConstraint->BreakConstraint();
 		PhysicsConstraint->DestroyComponent();
+		PhysicsConstraint = nullptr;
 	}
+	Super::OnDestroyPhysicsState();
 }
 
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
@@ -64,9 +63,9 @@ void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	DrawDebugLine(GetWorld(), GetComponentLocation(), PhysicsConstraint->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
 	if (GrabbedComponent){
 		if (ActorProxy) {
-			IGrabbable::Execute_GrabTick(ActorProxy, this);
+			IGrabbable::Execute_GrabTick(ActorProxy, this, DeltaTime);
 		} else {
-			IGrabbable::Execute_GrabTick(GrabbedComponent, this);
+			IGrabbable::Execute_GrabTick(GrabbedComponent, this, DeltaTime);
 		}
 	}
 }
@@ -163,6 +162,8 @@ void UGrabberComponent::Grab() {
 
 		GrabbedComponent = actualComponentToGrab;
 		WasGrabbedSimulatingPhysics = false;
+
+		InitialGrabOffset = GetComponentLocation() - actualComponentToGrab->GetComponentLocation();
 
 		if (GrabType == EGrabType::Free) {
 			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(actualComponentToGrab);

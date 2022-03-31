@@ -40,7 +40,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputYAxis(class UGrabberComponent* hand, float value);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void InputTriggerAxis(class UGrabberComponent* hand, float value);
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabTick(class UGrabberComponent* hand, float deltaTime);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Grabbable") void GrabEnd(class UGrabberComponent* hand);
 };
