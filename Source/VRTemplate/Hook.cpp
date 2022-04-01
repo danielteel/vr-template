@@ -2,6 +2,7 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "GrabberComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void UHook::OnDestroyPhysicsState() {
@@ -34,6 +35,7 @@ void UHook::GrabTick_Implementation(UGrabberComponent* hand, float deltaTime) {
 		WasJustBroken = false;
 		LastSeenOtherGrabbed = otherGrabbedComponent;
 		GrabbedDifference = hand->GetComponentLocation() - otherGrabber->GetComponentLocation();
+		InitialGrabberDistance = FVector::Dist(hand->GetComponentLocation(), otherGrabber->GetComponentLocation());
 	}
 
 	if (WasJustBroken && LastSeenOtherGrabbed) {
@@ -45,8 +47,9 @@ void UHook::GrabTick_Implementation(UGrabberComponent* hand, float deltaTime) {
 		if (ConstraintsComponents.Contains(otherGrabbedComponent)) {
 			//Component is attached, check to see if we need to detach it
 			float dist = FVector::Dist(hand->GetComponentLocation() - GrabbedDifference, otherGrabber->GetComponentLocation());
+			float grabbersDistance = FVector::Dist(hand->GetComponentLocation(), otherGrabber->GetComponentLocation());
 
-			if (dist >= HookBreakDistance) {
+			if (dist >= HookBreakDistance && grabbersDistance >=InitialGrabberDistance) {
 				//Far enough apart, disconnect
 				UPhysicsConstraintComponent** constraintPtr = ConstraintsComponents.Find(otherGrabbedComponent);
 				if (constraintPtr) {
@@ -58,6 +61,8 @@ void UHook::GrabTick_Implementation(UGrabberComponent* hand, float deltaTime) {
 				}
 				WasJustBroken = true;
 				ConstraintsComponents.Remove(otherGrabbedComponent);
+
+				if (DetachNoise) UGameplayStatics::PlaySound2D(GetWorld(), DetachNoise);
 			}
 
 		} else {
@@ -90,6 +95,8 @@ void UHook::GrabTick_Implementation(UGrabberComponent* hand, float deltaTime) {
 				physicsConstraint->SetConstrainedComponents(this, NAME_None, otherGrabbedComponent, NAME_None);
 
 				ConstraintsComponents.Add(otherGrabbedComponent, physicsConstraint);
+
+				if (AttachNoise) UGameplayStatics::PlaySound2D(GetWorld(), AttachNoise);
 			}
 		}
 	}
