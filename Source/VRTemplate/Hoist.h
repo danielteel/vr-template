@@ -38,6 +38,12 @@ protected:
 		class UStaticMesh* HookMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Setup")
+		class UStaticMesh* RetainerMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Setup")
+		class UStaticMesh* LockMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Setup")
 		class UMaterial* CableMaterial = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
@@ -47,7 +53,13 @@ protected:
 		class USphereComponent* Base = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
-		class UHook* Hook = nullptr;
+		class UPhysicalHook* Hook = nullptr;
+
+	UPROPERTY(VisibleInstanceOnly)
+		class UStaticMeshComponent* Lock = nullptr;
+
+	UPROPERTY(VisibleInstanceOnly)
+		class UStaticMeshComponent* Retainer = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
 		class UPhysicsConstraintComponent* Constraint = nullptr;

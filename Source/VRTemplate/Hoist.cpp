@@ -4,7 +4,7 @@
 #include "Hoist.h"
 #include "Components/StaticMeshComponent.h"
 #include "CableComponent.h"
-#include "Hook.h"
+#include "PhysicalHook.h"
 #include "Components/SphereComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
@@ -36,8 +36,14 @@ AHoist::AHoist(){
 	Base->InitSphereRadius(1.f);
 	Base->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
-	Hook = CreateDefaultSubobject<UHook>(FName("Hook"));
+	Hook = CreateDefaultSubobject<UPhysicalHook>(FName("Hook"));
 	Hook->SetupAttachment(Base);
+
+	Retainer = CreateDefaultSubobject<UStaticMeshComponent>(FName("Retainer"));
+	Retainer->SetupAttachment(Hook, FName("Retainer"));
+
+	Lock = CreateDefaultSubobject<UStaticMeshComponent>(FName("Lock"));
+	Lock->SetupAttachment(Hook, FName("Lock"));
 
 	Constraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("Constraint"));
 	Constraint->SetupAttachment(Base);
@@ -55,7 +61,12 @@ void AHoist::PreRegisterAllComponents() {
 	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 3.0f, 5, 1.0f);
 	SetupCable(BaseToHook, Base, Hook, CableMaterial, 3.0f, 50, 1.0f);
 	Boomhead->SetStaticMesh(BoomMesh);
-	if (Hook) Hook->SetStaticMesh(HookMesh);
+	if (Retainer) Retainer->SetStaticMesh(RetainerMesh);
+	if (Lock) Lock->SetStaticMesh(LockMesh);
+	if (Hook){
+		Hook->SetStaticMesh(HookMesh);
+		Hook->Setup(Retainer, Lock);
+	}
 }
 
 void AHoist::BeginPlay(){
@@ -63,6 +74,7 @@ void AHoist::BeginPlay(){
 
 	Hook->SetAngularDamping(1.0f);
 	Hook->SetSimulatePhysics(true);
+	Hook->SetUseCCD(true);
 	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	Constraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
