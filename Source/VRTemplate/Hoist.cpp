@@ -58,8 +58,8 @@ AHoist::AHoist(){
 
 void AHoist::PreRegisterAllComponents() {
 	Super::PreRegisterAllComponents();
-	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 3.0f, 5, 1.0f);
-	SetupCable(BaseToHook, Base, Hook, CableMaterial, 3.0f, 50, 1.0f);
+	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 1.5f, 5, 1.0f);
+	SetupCable(BaseToHook, Base, Hook, CableMaterial, 1.5f, 50, 1.0f);
 	Boomhead->SetStaticMesh(BoomMesh);
 	if (Retainer) Retainer->SetStaticMesh(RetainerMesh);
 	if (Lock) Lock->SetStaticMesh(LockMesh);
@@ -72,8 +72,8 @@ void AHoist::PreRegisterAllComponents() {
 void AHoist::BeginPlay(){
 	Super::BeginPlay();
 
-	Hook->SetAngularDamping(1.0f);
 	Hook->SetSimulatePhysics(true);
+	Hook->SetMassOverrideInKg(NAME_None, 1.0f);
 	Hook->SetUseCCD(true);
 	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
 	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
@@ -157,7 +157,7 @@ void AHoist::FixStuckCable() {
 	if (cableParticleLocations.Num() > 2) {
 		float lastDistanceBetween = 0.0f;
 		float distanceBetween = 0.0f;
-		float particleDeltaSlop = 15.0f;//10 cm variation allowed between particles
+		float particleDeltaSlop = 5.0f;//10 cm variation allowed between particles
 		for (int i = 0; i < cableParticleLocations.Num() - 1; i++) {
 			distanceBetween = FVector::Dist(cableParticleLocations[i], cableParticleLocations[i + 1]);
 			if (i > 0) {

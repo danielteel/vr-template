@@ -174,10 +174,10 @@ void UGrabberComponent::Grab() {
 			if (WasGrabbedSimulatingPhysics) {
 
 				OldBodyInstance = primitiveVersion->BodyInstance;
-				primitiveVersion->SetMassOverrideInKg(NAME_None, 500.0f);
+				//primitiveVersion->SetMassOverrideInKg(NAME_None, 500.0f);
 				primitiveVersion->SetLinearDamping(9.0f);
 				primitiveVersion->SetAngularDamping(4.5f);
-				primitiveVersion->SetMassScale(NAME_None, 1.0f);
+				//primitiveVersion->SetMassScale(NAME_None, 1.0f);
 				primitiveVersion->SetEnableGravity(false);
 				primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Overlap);
 				PhysicsConstraint->SetConstrainedComponents(this, NAME_None, primitiveVersion, NAME_None);
@@ -201,10 +201,10 @@ void UGrabberComponent::ReleaseGrab() {
 				PhysicsConstraint->BreakConstraint();
 				UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
 				if (primitiveVersion) {
-					primitiveVersion->SetMassOverrideInKg(NAME_None, OldBodyInstance.GetMassOverride());
+					//primitiveVersion->SetMassOverrideInKg(NAME_None, OldBodyInstance.GetMassOverride());
 					primitiveVersion->SetLinearDamping(OldBodyInstance.LinearDamping);
 					primitiveVersion->SetAngularDamping(OldBodyInstance.AngularDamping);
-					primitiveVersion->SetMassScale(NAME_None, OldBodyInstance.MassScale);
+					//primitiveVersion->SetMassScale(NAME_None, OldBodyInstance.MassScale);
 					primitiveVersion->SetEnableGravity(OldBodyInstance.bEnableGravity);
 
 					primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, OldBodyInstance.GetResponseToChannel(ECollisionChannel::ECC_Vehicle));

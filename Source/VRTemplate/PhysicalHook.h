@@ -30,5 +30,9 @@ protected:
 	UStaticMeshComponent* Lock;
 
 	bool Locked = true;
-	
+
+	UPROPERTY()
+	TMap<UPrimitiveComponent*, class UPhysicsConstraintComponent*> ConstraintsComponents;
+
+	float MaxHookDistance = 8.0f;
 };
