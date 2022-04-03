@@ -21,10 +21,11 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
 
-	virtual void OnDestroyPhysicsState() override;
+	UPROPERTY(VisibleAnywhere)
+	class UPhysicsHandleComponent* PhysicsHandle = nullptr;
 
 	UPROPERTY(VisibleAnywhere)
-	class UPhysicsConstraintComponent* PhysicsConstraint = nullptr;
+	class USceneComponent* GrabRefComponent = nullptr;
 
 	class UPrimitiveComponent * GetHandController();
 	class USceneComponent* GetGrabbedComponent() { return GrabbedComponent; }
@@ -52,7 +53,7 @@ public:
 	FVector InitialGrabOffset;
 
 	bool WasGrabbedSimulatingPhysics = false;
-	FBodyInstance OldBodyInstance;
 	EGrabType GrabType;
-	float GrabDistance = 10.0f;
+	float GrabDistance = 5.0f;
+	float OldGrabbedWeight;
 };

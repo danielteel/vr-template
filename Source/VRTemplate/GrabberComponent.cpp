@@ -4,7 +4,7 @@
 #include "GrabberComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/PrimitiveComponent.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "DrawDebugHelpers.h"
 
 UGrabberComponent::UGrabberComponent() {
@@ -14,54 +14,32 @@ UGrabberComponent::UGrabberComponent() {
 void UGrabberComponent::BeginPlay() {
 	Super::BeginPlay();
 
-	PhysicsConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("PhysicsConstraint"));
-	PhysicsConstraint->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	PhysicsConstraint->SetWorldLocation(GetComponentLocation());
+	GrabRefComponent = NewObject<USceneComponent>(this, FName("GrabRefComponent"));
+	GrabRefComponent->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, NAME_None);
+	GrabRefComponent->RegisterComponent();
 
-
-	FConstraintInstance ConstraintInstance;
-
-	ConstraintInstance.ProfileInstance.LinearLimit.Limit = 0.1f;
-	ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 2000.0f;
-	ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = 1.0f;
-	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
-
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing1LimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing2LimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = 150.0f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Damping = 25.0f;
-
-	ConstraintInstance.ProfileInstance.TwistLimit.TwistLimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = 150.f;
-	ConstraintInstance.ProfileInstance.TwistLimit.Damping = 25.0f;
-
-	ConstraintInstance.ProfileInstance.bDisableCollision=true;
-	ConstraintInstance.ProfileInstance.bEnableProjection = false;
-
-	PhysicsConstraint->ConstraintInstance = ConstraintInstance;
-	PhysicsConstraint->InitComponentConstraint();
+	PhysicsHandle = NewObject<UPhysicsHandleComponent>(this, FName("PhysicsHandle"));
+	PhysicsHandle->RegisterComponent();
+	//PhysicsHandle->SetLinearStiffness(1000.0f);
+	//PhysicsHandle->SetAngularStiffness(1000.0f);
+	//PhysicsHandle->SetLinearDamping(10.0f);
+	//PhysicsHandle->SetAngularDamping(10.0f);
+//	PhysicsHandle->bRotationConstrained = false;
+//	PhysicsHandle->bSoftAngularConstraint = true;
+//	PhysicsHandle->bSoftLinearConstraint = true;
+//	PhysicsHandle->SetAngularStiffness(0.0f);
 }
 
-void UGrabberComponent::OnDestroyPhysicsState() {
-	if (PhysicsConstraint) {
-		PhysicsConstraint->BreakConstraint();
-		PhysicsConstraint->DestroyComponent();
-		PhysicsConstraint = nullptr;
-	}
-	Super::OnDestroyPhysicsState();
-}
 
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	DrawDebugLine(GetWorld(), GetComponentLocation(), PhysicsConstraint->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
+	DrawDebugLine(GetWorld(), GetComponentLocation(), GrabRefComponent->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
 	if (GrabbedComponent){
+		UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
+		if (primitiveVersion) {
+			PhysicsHandle->SetTargetLocationAndRotation(GrabRefComponent->GetComponentLocation() + InitialGrabOffset, GrabRefComponent->GetComponentRotation());
+		}
 		if (ActorProxy) {
 			IGrabbable::Execute_GrabTick(ActorProxy, this, DeltaTime);
 		} else {
@@ -172,15 +150,13 @@ void UGrabberComponent::Grab() {
 				WasGrabbedSimulatingPhysics = primitiveVersion->IsSimulatingPhysics();
 			}
 			if (WasGrabbedSimulatingPhysics) {
-
-				OldBodyInstance = primitiveVersion->BodyInstance;
-				//primitiveVersion->SetMassOverrideInKg(NAME_None, 500.0f);
-				primitiveVersion->SetLinearDamping(9.0f);
-				primitiveVersion->SetAngularDamping(4.5f);
-				//primitiveVersion->SetMassScale(NAME_None, 1.0f);
-				primitiveVersion->SetEnableGravity(false);
 				primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Overlap);
-				PhysicsConstraint->SetConstrainedComponents(this, NAME_None, primitiveVersion, NAME_None);
+				OldGrabbedWeight = primitiveVersion->GetMass();
+				primitiveVersion->SetMassOverrideInKg(NAME_None, 1.0f, true);
+				GrabRefComponent->SetWorldLocation(primitiveVersion->GetComponentLocation());
+				GrabRefComponent->SetWorldRotation(primitiveVersion->GetComponentRotation());
+				PhysicsHandle->GrabComponentAtLocationWithRotation(primitiveVersion, NAME_None, GetComponentLocation(), primitiveVersion->GetComponentRotation());
+				//PhysicsHandle->GrabComponentAtLocation(primitiveVersion, NAME_None, primitiveVersion->GetComponentLocation());
 			} else {
 				actualComponentToGrab->AttachToComponent(GetHandController(), FAttachmentTransformRules::KeepWorldTransform);
 			}
@@ -198,16 +174,13 @@ void UGrabberComponent::ReleaseGrab() {
 
 		if (GrabType == EGrabType::Free) {
 			if (WasGrabbedSimulatingPhysics) {
-				PhysicsConstraint->BreakConstraint();
+				
 				UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
 				if (primitiveVersion) {
-					//primitiveVersion->SetMassOverrideInKg(NAME_None, OldBodyInstance.GetMassOverride());
-					primitiveVersion->SetLinearDamping(OldBodyInstance.LinearDamping);
-					primitiveVersion->SetAngularDamping(OldBodyInstance.AngularDamping);
-					//primitiveVersion->SetMassScale(NAME_None, OldBodyInstance.MassScale);
-					primitiveVersion->SetEnableGravity(OldBodyInstance.bEnableGravity);
+					PhysicsHandle->ReleaseComponent();
 
-					primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, OldBodyInstance.GetResponseToChannel(ECollisionChannel::ECC_Vehicle));
+					primitiveVersion->SetMassOverrideInKg(NAME_None, OldGrabbedWeight, true);
+					primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
 				}
 			} else {
 				GrabbedComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
