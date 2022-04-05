@@ -62,7 +62,7 @@ protected:
 		class UStaticMeshComponent* Retainer = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
-		class UPhysicsConstraintComponent* Constraint = nullptr;
+		class USimpleConstraint* Constraint = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
 		class UCableComponent* BoomToBase = nullptr;

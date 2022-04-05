@@ -5,6 +5,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/PrimitiveComponent.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "SimpleConstraint.h"
 #include "DrawDebugHelpers.h"
 
 UGrabberComponent::UGrabberComponent() {
@@ -13,32 +14,21 @@ UGrabberComponent::UGrabberComponent() {
 
 void UGrabberComponent::BeginPlay() {
 	Super::BeginPlay();
-
-	GrabRefComponent = NewObject<USceneComponent>(this, FName("GrabRefComponent"));
-	GrabRefComponent->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale, NAME_None);
-	GrabRefComponent->RegisterComponent();
-
-	PhysicsHandle = NewObject<UPhysicsHandleComponent>(this, FName("PhysicsHandle"));
-	PhysicsHandle->RegisterComponent();
-	//PhysicsHandle->SetLinearStiffness(1000.0f);
-	//PhysicsHandle->SetAngularStiffness(1000.0f);
-	//PhysicsHandle->SetLinearDamping(10.0f);
-	//PhysicsHandle->SetAngularDamping(10.0f);
-//	PhysicsHandle->bRotationConstrained = false;
-//	PhysicsHandle->bSoftAngularConstraint = true;
-//	PhysicsHandle->bSoftLinearConstraint = true;
-//	PhysicsHandle->SetAngularStiffness(0.0f);
 }
 
 
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	DrawDebugLine(GetWorld(), GetComponentLocation(), GrabRefComponent->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
 	if (GrabbedComponent){
-		UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
-		if (primitiveVersion) {
-			PhysicsHandle->SetTargetLocationAndRotation(GrabRefComponent->GetComponentLocation() + InitialGrabOffset, GrabRefComponent->GetComponentRotation());
+		if (GrabType == EGrabType::Free) {
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
+			if (primitiveVersion) {
+				if (USimpleConstraint::IsComponentViolated(primitiveVersion)) {
+					ReleaseGrab();
+					return;
+				}
+			}
 		}
 		if (ActorProxy) {
 			IGrabbable::Execute_GrabTick(ActorProxy, this, DeltaTime);
@@ -139,52 +129,33 @@ void UGrabberComponent::Grab() {
 		}
 
 		GrabbedComponent = actualComponentToGrab;
-		WasGrabbedSimulatingPhysics = false;
 
 		InitialGrabOffset = GetComponentLocation() - actualComponentToGrab->GetComponentLocation();
 
 		if (GrabType == EGrabType::Free) {
-			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(actualComponentToGrab);
-			
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
 			if (primitiveVersion) {
-				WasGrabbedSimulatingPhysics = primitiveVersion->IsSimulatingPhysics();
-			}
-			if (WasGrabbedSimulatingPhysics) {
-				primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Overlap);
-				OldGrabbedWeight = primitiveVersion->GetMass();
-				primitiveVersion->SetMassOverrideInKg(NAME_None, 1.0f, true);
-				GrabRefComponent->SetWorldLocation(primitiveVersion->GetComponentLocation());
-				GrabRefComponent->SetWorldRotation(primitiveVersion->GetComponentRotation());
-				PhysicsHandle->GrabComponentAtLocationWithRotation(primitiveVersion, NAME_None, GetComponentLocation(), primitiveVersion->GetComponentRotation());
-				//PhysicsHandle->GrabComponentAtLocation(primitiveVersion, NAME_None, primitiveVersion->GetComponentLocation());
+				WasSimulatingPhysics = primitiveVersion->IsSimulatingPhysics();
+				if (WasSimulatingPhysics) primitiveVersion->SetSimulatePhysics(false);
 			} else {
-				actualComponentToGrab->AttachToComponent(GetHandController(), FAttachmentTransformRules::KeepWorldTransform);
+				WasSimulatingPhysics = false;
 			}
+			actualComponentToGrab->AttachToComponent(GetHandController(), FAttachmentTransformRules::KeepWorldTransform);
 		}
 	}
 }
 
 void UGrabberComponent::ReleaseGrab() {
 	if (GrabbedComponent) {
+		if (GrabType == EGrabType::Free) {
+			GrabbedComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
+			if (primitiveVersion && WasSimulatingPhysics) primitiveVersion->SetSimulatePhysics(true);
+		}
 		if (ActorProxy) {
 			IGrabbable::Execute_GrabEnd(ActorProxy, this);
 		} else {
 			IGrabbable::Execute_GrabEnd(GrabbedComponent, this);
-		}
-
-		if (GrabType == EGrabType::Free) {
-			if (WasGrabbedSimulatingPhysics) {
-				
-				UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
-				if (primitiveVersion) {
-					PhysicsHandle->ReleaseComponent();
-
-					primitiveVersion->SetMassOverrideInKg(NAME_None, OldGrabbedWeight, true);
-					primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Block);
-				}
-			} else {
-				GrabbedComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-			}
 		}
 		GrabbedComponent = nullptr;
 		ActorProxy = nullptr;

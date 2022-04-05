@@ -6,7 +6,7 @@
 #include "CableComponent.h"
 #include "PhysicalHook.h"
 #include "Components/SphereComponent.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "SimpleConstraint.h"
 
 void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USceneComponent* component2, UMaterial* material, float width, int32 segments, float length) {
 	cable->AttachToComponent(component1, FAttachmentTransformRules::KeepRelativeTransform);
@@ -45,8 +45,9 @@ AHoist::AHoist(){
 	Lock = CreateDefaultSubobject<UStaticMeshComponent>(FName("Lock"));
 	Lock->SetupAttachment(Hook, FName("Lock"));
 
-	Constraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("Constraint"));
-	Constraint->SetupAttachment(Base);
+	Constraint = CreateDefaultSubobject<USimpleConstraint>(FName("Constraint"));
+	Constraint->SetupAttachment(Hook, FName("Constraint"));
+
 
 	BoomToBase = CreateDefaultSubobject<UCableComponent>(FName("BoomToBase"));
 	BoomToBase->SetupAttachment(Boomhead);
@@ -67,21 +68,11 @@ void AHoist::PreRegisterAllComponents() {
 		Hook->SetStaticMesh(HookMesh);
 		Hook->Setup(Retainer, Lock);
 	}
+	if (Constraint) Constraint->Setup(Base, NAME_None, Hook, NAME_None, 0.0f);
 }
 
 void AHoist::BeginPlay(){
 	Super::BeginPlay();
-
-	Hook->SetSimulatePhysics(true);
-	Hook->SetMassOverrideInKg(NAME_None, 1.0f);
-	Hook->SetUseCCD(true);
-	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 0;
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Restitution = 0.0f;
-	Constraint->ConstraintInstance.ProfileInstance.bEnableProjection = 0;
-	Constraint->SetConstrainedComponents(Base, NAME_None, Hook, NAME_None);
 }
 
 void AHoist::Tick(float DeltaTime){
@@ -118,6 +109,9 @@ void AHoist::SetHoistLength(float hoistLength) {
 	if (Jettisoned) return;
 
 	Hook->WakeRigidBody();
+	
+
+
 	float oldHoistLength = HoistOutLength;
 
 	HoistOutLength = FMath::Clamp(hoistLength, 0.0f, HoistMaxLength);
@@ -144,10 +138,12 @@ void AHoist::SetHoistLength(float hoistLength) {
 		BaseToHook->bEnableCollision = true;
 	}
 
-	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
-	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
-	Constraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
+	Constraint->SetDistanceAllowed(hoistOutMinusOffset);
 
+	if (FMath::Abs(FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation()) - HoistOutLength) < 5.0f) {
+		BaseToHook->CableLength = 0.0f;
+		BaseToHook->bEnableCollision = false;
+	}
 }
 
 void AHoist::FixStuckCable() {
@@ -157,7 +153,7 @@ void AHoist::FixStuckCable() {
 	if (cableParticleLocations.Num() > 2) {
 		float lastDistanceBetween = 0.0f;
 		float distanceBetween = 0.0f;
-		float particleDeltaSlop = 5.0f;//10 cm variation allowed between particles
+		float particleDeltaSlop = 1.0f;//1 cm variation allowed between particles
 		for (int i = 0; i < cableParticleLocations.Num() - 1; i++) {
 			distanceBetween = FVector::Dist(cableParticleLocations[i], cableParticleLocations[i + 1]);
 			if (i > 0) {

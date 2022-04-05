@@ -17,6 +17,8 @@ class VRTEMPLATE_API UPhysicalHook : public UStaticMeshComponent, public IGrabba
 
 public:
 	UPhysicalHook();
+	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual void InputButton1_Implementation(class UGrabberComponent* hand) override;
 
