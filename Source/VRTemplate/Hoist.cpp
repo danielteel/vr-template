@@ -4,9 +4,9 @@
 #include "Hoist.h"
 #include "Components/StaticMeshComponent.h"
 #include "CableComponent.h"
-#include "Hook.h"
+#include "PhysicalHook.h"
 #include "Components/SphereComponent.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "SimpleConstraint.h"
 
 void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USceneComponent* component2, UMaterial* material, float width, int32 segments, float length) {
 	cable->AttachToComponent(component1, FAttachmentTransformRules::KeepRelativeTransform);
@@ -36,11 +36,18 @@ AHoist::AHoist(){
 	Base->InitSphereRadius(1.f);
 	Base->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
-	Hook = CreateDefaultSubobject<UHook>(FName("Hook"));
+	Hook = CreateDefaultSubobject<UPhysicalHook>(FName("Hook"));
 	Hook->SetupAttachment(Base);
 
-	Constraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(FName("Constraint"));
-	Constraint->SetupAttachment(Base);
+	Retainer = CreateDefaultSubobject<UStaticMeshComponent>(FName("Retainer"));
+	Retainer->SetupAttachment(Hook, FName("Retainer"));
+
+	Lock = CreateDefaultSubobject<UStaticMeshComponent>(FName("Lock"));
+	Lock->SetupAttachment(Hook, FName("Lock"));
+
+	Constraint = CreateDefaultSubobject<USimpleConstraint>(FName("Constraint"));
+	Constraint->SetupAttachment(Hook, FName("Constraint"));
+
 
 	BoomToBase = CreateDefaultSubobject<UCableComponent>(FName("BoomToBase"));
 	BoomToBase->SetupAttachment(Boomhead);
@@ -52,24 +59,20 @@ AHoist::AHoist(){
 
 void AHoist::PreRegisterAllComponents() {
 	Super::PreRegisterAllComponents();
-	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 3.0f, 5, 1.0f);
-	SetupCable(BaseToHook, Base, Hook, CableMaterial, 3.0f, 50, 1.0f);
+	SetupCable(BoomToBase, Boomhead, Base, CableMaterial, 1.5f, 5, 1.0f);
+	SetupCable(BaseToHook, Base, Hook, CableMaterial, 1.5f, 50, 1.0f);
 	Boomhead->SetStaticMesh(BoomMesh);
-	if (Hook) Hook->SetStaticMesh(HookMesh);
+	if (Retainer) Retainer->SetStaticMesh(RetainerMesh);
+	if (Lock) Lock->SetStaticMesh(LockMesh);
+	if (Hook){
+		Hook->SetStaticMesh(HookMesh);
+		Hook->Setup(Retainer, Lock);
+	}
+	if (Constraint) Constraint->Setup(Base, NAME_None, Hook, NAME_None, 0.0f);
 }
 
 void AHoist::BeginPlay(){
 	Super::BeginPlay();
-
-	Hook->SetAngularDamping(1.0f);
-	Hook->SetSimulatePhysics(true);
-	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, 0.0f);
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 0;
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Restitution = 0.0f;
-	Constraint->ConstraintInstance.ProfileInstance.bEnableProjection = 0;
-	Constraint->SetConstrainedComponents(Base, NAME_None, Hook, NAME_None);
 }
 
 void AHoist::Tick(float DeltaTime){
@@ -106,6 +109,9 @@ void AHoist::SetHoistLength(float hoistLength) {
 	if (Jettisoned) return;
 
 	Hook->WakeRigidBody();
+	
+
+
 	float oldHoistLength = HoistOutLength;
 
 	HoistOutLength = FMath::Clamp(hoistLength, 0.0f, HoistMaxLength);
@@ -132,10 +138,13 @@ void AHoist::SetHoistLength(float hoistLength) {
 		BaseToHook->bEnableCollision = true;
 	}
 
-	Constraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
-	Constraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
-	Constraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, hoistOutMinusOffset);
+	Constraint->SetDistanceAllowed(hoistOutMinusOffset);
 
+	float actualDistance = FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation());
+	if (FMath::Abs(actualDistance - hoistOutMinusOffset) < 1.0f || actualDistance > hoistOutMinusOffset) {
+		BaseToHook->CableLength = 0.0f;
+		BaseToHook->bEnableCollision = false;
+	}
 }
 
 void AHoist::FixStuckCable() {
@@ -145,7 +154,7 @@ void AHoist::FixStuckCable() {
 	if (cableParticleLocations.Num() > 2) {
 		float lastDistanceBetween = 0.0f;
 		float distanceBetween = 0.0f;
-		float particleDeltaSlop = 15.0f;//10 cm variation allowed between particles
+		float particleDeltaSlop = 1.0f;//1 cm variation allowed between particles
 		for (int i = 0; i < cableParticleLocations.Num() - 1; i++) {
 			distanceBetween = FVector::Dist(cableParticleLocations[i], cableParticleLocations[i + 1]);
 			if (i > 0) {

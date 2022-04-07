@@ -2,9 +2,12 @@
 
 
 #include "GrabberComponent.h"
+#include "VRPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/PrimitiveComponent.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "SimpleConstraint.h"
+#include "HandControllerComponent.h"
 #include "DrawDebugHelpers.h"
 
 UGrabberComponent::UGrabberComponent() {
@@ -13,65 +16,47 @@ UGrabberComponent::UGrabberComponent() {
 
 void UGrabberComponent::BeginPlay() {
 	Super::BeginPlay();
-
-	PhysicsConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("PhysicsConstraint"));
-	PhysicsConstraint->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	PhysicsConstraint->SetWorldLocation(GetComponentLocation());
-
-
-	FConstraintInstance ConstraintInstance;
-
-	ConstraintInstance.ProfileInstance.LinearLimit.Limit = 0.1f;
-	ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 2000.0f;
-	ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = 1.0f;
-	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
-
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing1LimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing2LimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = 150.0f;
-	ConstraintInstance.ProfileInstance.ConeLimit.Damping = 25.0f;
-
-	ConstraintInstance.ProfileInstance.TwistLimit.TwistLimitDegrees = 0.1f;
-	ConstraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Limited;
-	ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = 150.f;
-	ConstraintInstance.ProfileInstance.TwistLimit.Damping = 25.0f;
-
-	ConstraintInstance.ProfileInstance.bDisableCollision=true;
-	ConstraintInstance.ProfileInstance.bEnableProjection = false;
-
-	PhysicsConstraint->ConstraintInstance = ConstraintInstance;
-	PhysicsConstraint->InitComponentConstraint();
 }
 
-void UGrabberComponent::OnDestroyPhysicsState() {
-	if (PhysicsConstraint) {
-		PhysicsConstraint->BreakConstraint();
-		PhysicsConstraint->DestroyComponent();
-		PhysicsConstraint = nullptr;
-	}
-	Super::OnDestroyPhysicsState();
-}
 
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	DrawDebugLine(GetWorld(), GetComponentLocation(), PhysicsConstraint->GetComponentLocation(), FColor::Red, false, 0, 0, 1.0f);
+	float hapticValue = 0.0f;
+
 	if (GrabbedComponent){
+		if (GrabType == EGrabType::Free) {
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
+			if (primitiveVersion) {
+				float howCloseToViolating = 0.0f;
+				if (USimpleConstraint::IsComponentViolated(primitiveVersion, &howCloseToViolating)) {
+					ReleaseGrab();
+					return;
+				} else {
+					if (!FMath::IsNearlyZero(howCloseToViolating)) {
+						//Set Haptics
+						hapticValue = howCloseToViolating;
+					}
+				}
+			}
+		}
 		if (ActorProxy) {
 			IGrabbable::Execute_GrabTick(ActorProxy, this, DeltaTime);
 		} else {
 			IGrabbable::Execute_GrabTick(GrabbedComponent, this, DeltaTime);
 		}
 	}
+	AVRPawn* pawn = Cast<AVRPawn>(GetOwner());
+	if (pawn) {
+		APlayerController* playerController = Cast<APlayerController>(pawn->GetController());
+		if (playerController) {
+			playerController->SetHapticsByValue(hapticValue, hapticValue, GetHandController()->GetTrackingSource());
+		}
+	}
 }
 
-UPrimitiveComponent* UGrabberComponent::GetHandController() {
-	return Cast<UPrimitiveComponent>(this->GetAttachParent());
+UHandControllerComponent* UGrabberComponent::GetHandController() {
+	return Cast<UHandControllerComponent>(this->GetAttachParent());
 }
 
 UPrimitiveComponent* UGrabberComponent::GetComponentToGrab(AActor*& actorProxy) {
@@ -161,57 +146,33 @@ void UGrabberComponent::Grab() {
 		}
 
 		GrabbedComponent = actualComponentToGrab;
-		WasGrabbedSimulatingPhysics = false;
 
 		InitialGrabOffset = GetComponentLocation() - actualComponentToGrab->GetComponentLocation();
 
 		if (GrabType == EGrabType::Free) {
-			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(actualComponentToGrab);
-			
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
 			if (primitiveVersion) {
-				WasGrabbedSimulatingPhysics = primitiveVersion->IsSimulatingPhysics();
-			}
-			if (WasGrabbedSimulatingPhysics) {
-
-				OldBodyInstance = primitiveVersion->BodyInstance;
-				primitiveVersion->SetMassOverrideInKg(NAME_None, 500.0f);
-				primitiveVersion->SetLinearDamping(9.0f);
-				primitiveVersion->SetAngularDamping(4.5f);
-				primitiveVersion->SetMassScale(NAME_None, 1.0f);
-				primitiveVersion->SetEnableGravity(false);
-				primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, ECollisionResponse::ECR_Overlap);
-				PhysicsConstraint->SetConstrainedComponents(this, NAME_None, primitiveVersion, NAME_None);
+				WasSimulatingPhysics = primitiveVersion->IsSimulatingPhysics();
+				if (WasSimulatingPhysics) primitiveVersion->SetSimulatePhysics(false);
 			} else {
-				actualComponentToGrab->AttachToComponent(GetHandController(), FAttachmentTransformRules::KeepWorldTransform);
+				WasSimulatingPhysics = false;
 			}
+			actualComponentToGrab->AttachToComponent(GetHandController(), FAttachmentTransformRules::KeepWorldTransform);
 		}
 	}
 }
 
 void UGrabberComponent::ReleaseGrab() {
 	if (GrabbedComponent) {
+		if (GrabType == EGrabType::Free) {
+			GrabbedComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
+			if (primitiveVersion && WasSimulatingPhysics) primitiveVersion->SetSimulatePhysics(true);
+		}
 		if (ActorProxy) {
 			IGrabbable::Execute_GrabEnd(ActorProxy, this);
 		} else {
 			IGrabbable::Execute_GrabEnd(GrabbedComponent, this);
-		}
-
-		if (GrabType == EGrabType::Free) {
-			if (WasGrabbedSimulatingPhysics) {
-				PhysicsConstraint->BreakConstraint();
-				UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
-				if (primitiveVersion) {
-					primitiveVersion->SetMassOverrideInKg(NAME_None, OldBodyInstance.GetMassOverride());
-					primitiveVersion->SetLinearDamping(OldBodyInstance.LinearDamping);
-					primitiveVersion->SetAngularDamping(OldBodyInstance.AngularDamping);
-					primitiveVersion->SetMassScale(NAME_None, OldBodyInstance.MassScale);
-					primitiveVersion->SetEnableGravity(OldBodyInstance.bEnableGravity);
-
-					primitiveVersion->SetCollisionResponseToChannel(ECollisionChannel::ECC_Vehicle, OldBodyInstance.GetResponseToChannel(ECollisionChannel::ECC_Vehicle));
-				}
-			} else {
-				GrabbedComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-			}
 		}
 		GrabbedComponent = nullptr;
 		ActorProxy = nullptr;
