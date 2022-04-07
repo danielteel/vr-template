@@ -16,7 +16,7 @@ class VRTEMPLATE_API USimpleConstraint : public UPhysicsConstraintComponent
 
 public:
 	static USimpleConstraint* MakeConstraint(UPrimitiveComponent* owner, FName ownerSocket, UPrimitiveComponent* child, FName childSocket, float distanceAllowed);
-	static bool IsComponentViolated(UPrimitiveComponent* component);
+	static bool IsComponentViolated(UPrimitiveComponent* component, float* howCloseToViolating);
 	static TMap<USimpleConstraint*, UPrimitiveComponent*> ConstraintChild;
 	static TMap<USimpleConstraint*, UPrimitiveComponent*> ConstraintOwner;
 	
@@ -26,7 +26,7 @@ public:
 	void Setup(UPrimitiveComponent* owner, FName ownerSocket, UPrimitiveComponent* child, FName childSocket, float distanceAllowed);
 
 	void SetDistanceAllowed(float distanceAllowed);
-	bool IsViolated();
+	bool IsViolated(float* howMuch);
 
 
 	class UPrimitiveComponent* Owner=nullptr;
@@ -37,5 +37,5 @@ public:
 protected:
 	float DistanceAllowed = 0.0f;
 
-	float DistanceBeforeViolated = 15.0f;
+	float DistanceBeforeViolated = 20.0f;
 };

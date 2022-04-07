@@ -22,7 +22,7 @@ public:
 	virtual void BeginPlay() override;
 
 
-	class UPrimitiveComponent * GetHandController();
+	class UHandControllerComponent* GetHandController();
 	class USceneComponent* GetGrabbedComponent() { return GrabbedComponent; }
 	class UPrimitiveComponent* GetGrabbedPrimitiveComponent() { return Cast<UPrimitiveComponent>(GrabbedComponent); }
 	class UPrimitiveComponent* GetComponentToGrab(AActor*& actorProxy);

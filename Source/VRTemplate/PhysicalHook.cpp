@@ -17,7 +17,7 @@ void UPhysicalHook::BeginPlay() {
 	SetSimulatePhysics(true);
 	SetAngularDamping(0.5f);
 	SetLinearDamping(0.05f);
-	SetMassOverrideInKg(NAME_None, 1.0f);
+	SetMassOverrideInKg(NAME_None, 0.5f);
 	SetUseCCD(true);
 }
 

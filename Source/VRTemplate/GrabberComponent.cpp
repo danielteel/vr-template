@@ -2,10 +2,12 @@
 
 
 #include "GrabberComponent.h"
+#include "VRPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/PrimitiveComponent.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "SimpleConstraint.h"
+#include "HandControllerComponent.h"
 #include "DrawDebugHelpers.h"
 
 UGrabberComponent::UGrabberComponent() {
@@ -20,13 +22,21 @@ void UGrabberComponent::BeginPlay() {
 void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	float hapticValue = 0.0f;
+
 	if (GrabbedComponent){
 		if (GrabType == EGrabType::Free) {
 			UPrimitiveComponent* primitiveVersion = Cast<UPrimitiveComponent>(GrabbedComponent);
 			if (primitiveVersion) {
-				if (USimpleConstraint::IsComponentViolated(primitiveVersion)) {
+				float howCloseToViolating = 0.0f;
+				if (USimpleConstraint::IsComponentViolated(primitiveVersion, &howCloseToViolating)) {
 					ReleaseGrab();
 					return;
+				} else {
+					if (!FMath::IsNearlyZero(howCloseToViolating)) {
+						//Set Haptics
+						hapticValue = howCloseToViolating;
+					}
 				}
 			}
 		}
@@ -36,10 +46,17 @@ void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 			IGrabbable::Execute_GrabTick(GrabbedComponent, this, DeltaTime);
 		}
 	}
+	AVRPawn* pawn = Cast<AVRPawn>(GetOwner());
+	if (pawn) {
+		APlayerController* playerController = Cast<APlayerController>(pawn->GetController());
+		if (playerController) {
+			playerController->SetHapticsByValue(hapticValue, hapticValue, GetHandController()->GetTrackingSource());
+		}
+	}
 }
 
-UPrimitiveComponent* UGrabberComponent::GetHandController() {
-	return Cast<UPrimitiveComponent>(this->GetAttachParent());
+UHandControllerComponent* UGrabberComponent::GetHandController() {
+	return Cast<UHandControllerComponent>(this->GetAttachParent());
 }
 
 UPrimitiveComponent* UGrabberComponent::GetComponentToGrab(AActor*& actorProxy) {

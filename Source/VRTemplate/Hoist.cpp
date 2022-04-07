@@ -140,7 +140,8 @@ void AHoist::SetHoistLength(float hoistLength) {
 
 	Constraint->SetDistanceAllowed(hoistOutMinusOffset);
 
-	if (FMath::Abs(FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation()) - HoistOutLength) < 5.0f) {
+	float actualDistance = FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation());
+	if (FMath::Abs(actualDistance - hoistOutMinusOffset) < 1.0f || actualDistance > hoistOutMinusOffset) {
 		BaseToHook->CableLength = 0.0f;
 		BaseToHook->bEnableCollision = false;
 	}

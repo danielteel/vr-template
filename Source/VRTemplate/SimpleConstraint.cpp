@@ -7,20 +7,32 @@
 TMap<USimpleConstraint*, UPrimitiveComponent*> USimpleConstraint::ConstraintChild;
 TMap<USimpleConstraint*, UPrimitiveComponent*> USimpleConstraint::ConstraintOwner;
 
-bool USimpleConstraint::IsComponentViolated(UPrimitiveComponent* component) {
+bool USimpleConstraint::IsComponentViolated(UPrimitiveComponent* component, float* howCloseToViolating = nullptr) {
+	if (howCloseToViolating) *howCloseToViolating = 0.0f;
+
 	TArray<USimpleConstraint*> constraints;
 	for (auto& elem : ConstraintChild) {
 		if (elem.Value == component) constraints.Add(elem.Key);
 	}
 
 	for (auto& elem : constraints) {
-		if (elem && elem->IsViolated()) {
-			return true;
-		} else {
-			//Probably dont need recursion, but the options here if I want it
-			//if (IsComponentViolated(elem->Owner)) return true;
+		if (elem && elem->IsViolated(howCloseToViolating)) {
+			return true;//Only return true for children so both controllers dont drop what theyre holding
 		}
 	}
+
+	constraints.Reset();
+	for (auto& elem : ConstraintOwner) {
+		if (elem.Value == component) constraints.Add(elem.Key);
+	}	
+	for (auto& elem : constraints) {
+		if (elem) {
+			float howClose = 0.0f;
+			elem->IsViolated(&howClose);
+			if (howClose > *howCloseToViolating) *howCloseToViolating = howClose;
+		}
+	}
+
 	return false;
 }
 
@@ -35,9 +47,15 @@ USimpleConstraint* USimpleConstraint::MakeConstraint(UPrimitiveComponent* owner,
 	constraint->AttachToComponent(owner, FAttachmentTransformRules::KeepRelativeTransform);
 	constraint->SetWorldLocation(owner->GetSocketLocation(ownerSocket));
 	FConstraintInstance ConstraintInstance;
-	ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
-	ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
+	if (FMath::IsNearlyZero(distanceAllowed)) {
+		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Locked;
+		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Locked;
+		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Locked;
+	} else {
+		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
+		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
+		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
+	}
 	ConstraintInstance.ProfileInstance.LinearLimit.Limit = distanceAllowed;
 	ConstraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Free;
 	ConstraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Free;
@@ -106,13 +124,30 @@ void USimpleConstraint::OnUnregister() {
 void USimpleConstraint::SetDistanceAllowed(float distanceAllowed) {
 	DistanceAllowed = distanceAllowed;
 	ConstraintInstance.ProfileInstance.LinearLimit.Limit = distanceAllowed;
+
+	if (FMath::IsNearlyZero(distanceAllowed)) {
+		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Locked;
+		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Locked;
+		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Locked;
+	} else {
+		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
+		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
+		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
+	}
+
 	ConstraintInstance.UpdateLinearLimit();
 }
 
-bool USimpleConstraint::IsViolated() {
+bool USimpleConstraint::IsViolated(float* howMuch) {
 	if (!Owner || !Child) return false;
-	if (FVector::Dist(Owner->GetSocketLocation(OwnerSocket), Child->GetSocketLocation(ChildSocket)) > DistanceAllowed + DistanceBeforeViolated) {
+	float jointDist = FVector::Dist(Owner->GetSocketLocation(OwnerSocket), Child->GetSocketLocation(ChildSocket));
+	if (jointDist > DistanceAllowed + DistanceBeforeViolated) {
 		return true;
+	}
+	if (howMuch && jointDist > DistanceAllowed+DistanceBeforeViolated/4.0f) {
+		*howMuch = (jointDist - DistanceAllowed - DistanceBeforeViolated / 4.0f) / (DistanceBeforeViolated - DistanceBeforeViolated / 4.0f);
+	} else if (howMuch) {
+		*howMuch = 0.0f;
 	}
 	return false;
 }
