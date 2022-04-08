@@ -62,6 +62,7 @@ USimpleConstraint* USimpleConstraint::MakeConstraint(UPrimitiveComponent* owner,
 	ConstraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Free;
 	ConstraintInstance.ProfileInstance.bDisableCollision = true;
 	ConstraintInstance.ProfileInstance.bEnableProjection = true;
+	ConstraintInstance.ProfileInstance.ProjectionLinearTolerance = 0.1f;
 	constraint->ConstraintInstance = ConstraintInstance;
 	constraint->InitComponentConstraint();
 	constraint->SetConstrainedComponents(owner, NAME_None, child, NAME_None);
@@ -99,7 +100,8 @@ void USimpleConstraint::Setup(UPrimitiveComponent* owner, FName ownerSocket, UPr
 	constraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Free;
 	constraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Free;
 	constraintInstance.ProfileInstance.bDisableCollision = true;
-	constraintInstance.ProfileInstance.bEnableProjection = true;
+	//ConstraintInstance.ProfileInstance.bEnableProjection = true;
+	//ConstraintInstance.ProfileInstance.ProjectionLinearTolerance = 0.1f;
 	ConstraintInstance = constraintInstance;
 	InitComponentConstraint();
 	SetConstrainedComponents(owner, NAME_None, child, NAME_None);

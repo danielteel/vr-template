@@ -26,7 +26,6 @@ void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USc
 
 AHoist::AHoist(){
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.TickGroup = ETickingGroup::TG_PostUpdateWork;
 
 	Boomhead = CreateDefaultSubobject<UStaticMeshComponent>(FName("Boomhead"));
 	SetRootComponent(Boomhead);
