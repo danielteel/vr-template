@@ -26,6 +26,16 @@
 		{
 			"Name": "ARUtilities",
 			"Enabled": true
+		},
+		{
+			"Name": "VICODynamicsPlugin",
+			"Enabled": false,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/6d874b00b82d4eae9ae472ff843d5af3"
 		}
+	],
+	"TargetPlatforms": [
+		"Lumin",
+		"WindowsNoEditor",
+		"AllDesktop"
 	]
 }

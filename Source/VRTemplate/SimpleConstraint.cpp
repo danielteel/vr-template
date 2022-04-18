@@ -2,7 +2,7 @@
 
 
 #include "SimpleConstraint.h"
-
+#include "Kismet/KismetMathLibrary.h"
 
 TMap<USimpleConstraint*, UPrimitiveComponent*> USimpleConstraint::ConstraintChild;
 TMap<USimpleConstraint*, UPrimitiveComponent*> USimpleConstraint::ConstraintOwner;
@@ -36,43 +36,39 @@ bool USimpleConstraint::IsComponentViolated(UPrimitiveComponent* component, floa
 	return false;
 }
 
+FConstraintInstance USimpleConstraint::MakeConstraintInstance(float distanceAllowed=0.0f){
+	FConstraintInstance constraintInstance;
+	if (FMath::IsNearlyZero(distanceAllowed)) {
+		constraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Locked;
+		constraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Locked;
+		constraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Locked;
+	} else {
+		constraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
+		constraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
+		constraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
+	}
+	constraintInstance.ProfileInstance.LinearLimit.Limit = distanceAllowed;
+	constraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Free;
+	constraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Free;
+	constraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Free;
+	constraintInstance.ProfileInstance.bDisableCollision = true;
+	constraintInstance.ProfileInstance.bEnableProjection = true;
+	constraintInstance.ProfileInstance.ProjectionLinearTolerance = 0.1f;
+	return constraintInstance;
+}
+
+
 USimpleConstraint* USimpleConstraint::MakeConstraint(UPrimitiveComponent* owner, FName ownerSocket, UPrimitiveComponent* child, FName childSocket, float distanceAllowed=0.0f) {
-	if (!owner || !child) return nullptr;
+	if (ensureMsgf(!owner || !child, TEXT("Owner or Child is nullptr"))){
+		return nullptr;
+	}
 
 	child->AddWorldOffset(owner->GetSocketLocation(ownerSocket) - child->GetSocketLocation(childSocket));
 
 	USimpleConstraint* constraint = NewObject<USimpleConstraint>(owner);
 	if (!constraint) return nullptr;
-
 	constraint->AttachToComponent(owner, FAttachmentTransformRules::KeepRelativeTransform);
-	constraint->SetWorldLocation(owner->GetSocketLocation(ownerSocket));
-	FConstraintInstance ConstraintInstance;
-	if (FMath::IsNearlyZero(distanceAllowed)) {
-		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Locked;
-		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Locked;
-		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Locked;
-	} else {
-		ConstraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
-		ConstraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
-		ConstraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
-	}
-	ConstraintInstance.ProfileInstance.LinearLimit.Limit = distanceAllowed;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Free;
-	ConstraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Free;
-	ConstraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Free;
-	ConstraintInstance.ProfileInstance.bDisableCollision = true;
-	ConstraintInstance.ProfileInstance.bEnableProjection = true;
-	ConstraintInstance.ProfileInstance.ProjectionLinearTolerance = 0.1f;
-	constraint->ConstraintInstance = ConstraintInstance;
-	constraint->InitComponentConstraint();
-	constraint->SetConstrainedComponents(owner, NAME_None, child, NAME_None);
-
-	constraint->OwnerSocket = ownerSocket;
-	constraint->ChildSocket = childSocket;
-	constraint->Owner = owner;
-	constraint->Child = child;
-	constraint->DistanceAllowed = distanceAllowed;
-
+	constraint->Setup(owner, ownerSocket, child, childSocket, distanceAllowed);
 	constraint->RegisterComponent();
 
 	ConstraintChild.Add(constraint, child);
@@ -82,29 +78,24 @@ USimpleConstraint* USimpleConstraint::MakeConstraint(UPrimitiveComponent* owner,
 }
 
 USimpleConstraint::USimpleConstraint() {
-
 }
 
 void USimpleConstraint::Setup(UPrimitiveComponent* owner, FName ownerSocket, UPrimitiveComponent* child, FName childSocket, float distanceAllowed = 0.0f) {
-	if (!owner || !child) return;
+	if (ensureMsgf(!owner || !child, TEXT("Owner or Child is nullptr"))){
+		return;
+	}
 
 	child->AddWorldOffset(owner->GetSocketLocation(ownerSocket) - child->GetSocketLocation(childSocket));
 
 	SetWorldLocation(owner->GetSocketLocation(ownerSocket));
-	FConstraintInstance constraintInstance;
-	constraintInstance.ProfileInstance.LinearLimit.XMotion = ELinearConstraintMotion::LCM_Limited;
-	constraintInstance.ProfileInstance.LinearLimit.YMotion = ELinearConstraintMotion::LCM_Limited;
-	constraintInstance.ProfileInstance.LinearLimit.ZMotion = ELinearConstraintMotion::LCM_Limited;
-	constraintInstance.ProfileInstance.LinearLimit.Limit = distanceAllowed;
-	constraintInstance.ProfileInstance.ConeLimit.Swing1Motion = EAngularConstraintMotion::ACM_Free;
-	constraintInstance.ProfileInstance.ConeLimit.Swing2Motion = EAngularConstraintMotion::ACM_Free;
-	constraintInstance.ProfileInstance.TwistLimit.TwistMotion = EAngularConstraintMotion::ACM_Free;
-	constraintInstance.ProfileInstance.bDisableCollision = true;
-	//ConstraintInstance.ProfileInstance.bEnableProjection = true;
-	//ConstraintInstance.ProfileInstance.ProjectionLinearTolerance = 0.1f;
-	ConstraintInstance = constraintInstance;
+
+
+	ConstraintInstance = MakeConstraintInstance(distanceAllowed);
 	InitComponentConstraint();
 	SetConstrainedComponents(owner, NAME_None, child, NAME_None);
+
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = TG_PrePhysics;
 
 	OwnerSocket = ownerSocket;
 	ChildSocket = childSocket;
@@ -121,6 +112,19 @@ void USimpleConstraint::OnUnregister() {
 	BreakConstraint();
 	ConstraintChild.Remove(this);
 	ConstraintOwner.Remove(this);
+}
+
+
+
+void USimpleConstraint::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	FVector OwnerLocation = Owner->GetComponentLocation();
+	FVector ChildLocation = Child->GetComponentLocation();
+	OwnerVelocity = (OwnerLastPosition - OwnerLocation)/DeltaTime;
+	ChildLocation = (ChildLastPosition - ChildLocation)/DeltaTime;
+	OwnerLastPosition = OwnerLocation;
+	ChildLastPosition = ChildLocation;
 }
 
 void USimpleConstraint::SetDistanceAllowed(float distanceAllowed) {
@@ -142,7 +146,17 @@ void USimpleConstraint::SetDistanceAllowed(float distanceAllowed) {
 
 bool USimpleConstraint::IsViolated(float* howMuch) {
 	if (!Owner || !Child) return false;
-	float jointDist = FVector::Dist(Owner->GetSocketLocation(OwnerSocket), Child->GetSocketLocation(ChildSocket));
+
+	FVector ownerDelta = FVector::ZeroVector;
+	FVector childDelta = FVector::ZeroVector;
+	UWorld* world = GetWorld();
+	if (world) {
+		float deltaTime = world->DeltaTimeSeconds;
+		if (Owner->IsSimulatingPhysics()) ownerDelta = OwnerVelocity*deltaTime;
+		if (Child->IsSimulatingPhysics()) childDelta = ChildVelocity*deltaTime;
+	}
+
+	float jointDist = FVector::Dist(Owner->GetSocketLocation(OwnerSocket) + ownerDelta, Child->GetSocketLocation(ChildSocket) + childDelta);
 	if (jointDist > DistanceAllowed + DistanceBeforeViolated) {
 		return true;
 	}

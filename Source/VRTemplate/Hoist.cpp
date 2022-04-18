@@ -7,10 +7,11 @@
 #include "PhysicalHook.h"
 #include "Components/SphereComponent.h"
 #include "SimpleConstraint.h"
+#include "DrawDebugHelpers.h"
 
 void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USceneComponent* component2, UMaterial* material, float width, int32 segments, float length) {
 	cable->AttachToComponent(component1, FAttachmentTransformRules::KeepRelativeTransform);
-	cable->PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+	PrimaryActorTick.TickGroup = TG_PostUpdateWork;
 	cable->CableLength = length;
 	cable->NumSegments = segments;
 	cable->bEnableStiffness = true;
@@ -22,6 +23,7 @@ void AHoist::SetupCable(UCableComponent* cable, USceneComponent* component1, USc
 	cable->CableWidth = width;
 	cable->CollisionFriction = 0.05f;
 	cable->SetMaterial(0, material);
+	cable->PrimaryComponentTick.TickGroup = TG_PostPhysics;
 }
 
 AHoist::AHoist(){
@@ -77,7 +79,7 @@ void AHoist::BeginPlay(){
 void AHoist::Tick(float DeltaTime){
 	Super::Tick(DeltaTime);
 
-	FixStuckCable();
+	//FixStuckCable();
 
 	if (Jettisoned) return;
 
@@ -139,11 +141,11 @@ void AHoist::SetHoistLength(float hoistLength) {
 
 	Constraint->SetDistanceAllowed(hoistOutMinusOffset);
 
-	float actualDistance = FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation());
-	if (FMath::Abs(actualDistance - hoistOutMinusOffset) < 1.0f || actualDistance > hoistOutMinusOffset) {
+	//float actualDistance = FVector::Dist(Hook->GetComponentLocation(), Base->GetComponentLocation());
+	//if (FMath::Abs(actualDistance - hoistOutMinusOffset) < 3.0f || actualDistance > hoistOutMinusOffset) {
 		BaseToHook->CableLength = 0.0f;
-		BaseToHook->bEnableCollision = false;
-	}
+	//	BaseToHook->bEnableCollision = false;
+	//}
 }
 
 void AHoist::FixStuckCable() {

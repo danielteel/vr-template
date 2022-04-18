@@ -59,7 +59,6 @@ void ACV22::BeginPlay() {
 	RotorLeft->IsLeftRotor = true;
 	Body->SetMassOverrideInKg(NAME_None, 18143.0f, true);
 	Body->SetSimulatePhysics(true);
-	Body->SetUseCCD(true);
 }
 
 
