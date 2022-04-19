@@ -10,6 +10,11 @@ UCV22MovementComponent::UCV22MovementComponent() {
 void UCV22MovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	ApplyMoveForces(DeltaTime);
+	UpdateRadAlt();
+}
+
+void UCV22MovementComponent::ApplyMoveForces(float deltaTime){
 	if (!Aircraft) {
 		UE_LOG(LogTemp, Error, TEXT("No aircraft set in cv22movementcomponent"));
 		return;
@@ -19,31 +24,33 @@ void UCV22MovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	FVector localVelocity = GetOwner()->GetActorRotation().UnrotateVector(Aircraft->GetComponentVelocity());
 
 
-	FVector accel = (LastVelocity - localVelocity) / DeltaTime;
+	FVector accel = (LastVelocity - localVelocity) / deltaTime;
+
 	FVector hoverForce = GetOwner()->GetActorUpVector() * Aircraft->GetMass() * (-GetWorld()->GetGravityZ());
 
-	Aircraft->AddForce(hoverForce);
-	Aircraft->AddForce(hoverForce*MoveIntent.Z);
+	Aircraft->AddForce(hoverForce);//Add enough force just to hover
+	Aircraft->AddForce(hoverForce*MoveIntent.Z*VerticalMaxMoveLimit);//Apply force to ascend/descend
 
-	Aircraft->AddForce(10000000.0f * MoveIntent.X * GetOwner()->GetActorForwardVector());
-	Aircraft->AddForce(10000000.0f * MoveIntent.Y * GetOwner()->GetActorRightVector());
+	Aircraft->AddForce(InPlaneMaxMoveLimit * MoveIntent.X * GetOwner()->GetActorForwardVector());//Move forward and aft
+	Aircraft->AddForce(InPlaneMaxMoveLimit * MoveIntent.Y * GetOwner()->GetActorRightVector());//Move left and right
 
-	float maxPitchRoll = 15.0f;
-	float desiredPitch = FMath::Clamp(accel.X / 1000.0f, -1.0f, 1.0f) * maxPitchRoll;
-	float desiredRoll = FMath::Clamp(accel.Y / 1000.0f, -1.0f, 1.0f) * -maxPitchRoll;
+	float desiredPitch = FMath::Clamp(accel.X / DesiredPitchDivider, -1.0f, 1.0f) * MaxPitchRoll;
+	float desiredRoll = FMath::Clamp(accel.Y / DesiredPitchDivider, -1.0f, 1.0f) * -MaxPitchRoll;
 
 	float pitchDiff = desiredPitch - acRotation.Pitch;
 	float rollDiff = desiredRoll - acRotation.Roll;
 
-	FVector rotVel = Aircraft->GetUpVector() * 30.0f * DeltaTime * MoveIntent.W;
-	rotVel += Aircraft->GetForwardVector() * 60.f * DeltaTime * (-rollDiff / 30.f);
-	rotVel += Aircraft->GetRightVector() * 60.0f * DeltaTime * (-pitchDiff / 30.f);
+	FVector rotVel = Aircraft->GetUpVector() * 30.0f * deltaTime * MoveIntent.W;
+	rotVel += Aircraft->GetForwardVector() * 60.f * deltaTime * (-rollDiff / 30.f);
+	rotVel += Aircraft->GetRightVector() * 60.0f * deltaTime * (-pitchDiff / 30.f);
 
 	Aircraft->SetPhysicsAngularVelocityInDegrees(rotVel, true);
 
 	LastVelocity = localVelocity;
+}
 
 
+void UCV22MovementComponent::UpdateRadAlt(){
 	FHitResult hitResult;
 	FVector traceStart = GetOwner()->GetActorLocation();
 	FVector traceEnd = traceStart - FVector::UpVector * 50000.0f;
@@ -52,11 +59,10 @@ void UCV22MovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	bool success = GetWorld()->LineTraceSingleByChannel(hitResult, traceStart, traceEnd, ECollisionChannel::ECC_Visibility, queryParams);
 
 	if (success) {
-		AGL = hitResult.Distance*0.0328084f;
+		AGL = hitResult.Distance*0.0328084f;//convert cm to feet
 	} else {
 		AGL = -1;
 	}
-
 }
 
 int32 UCV22MovementComponent::GetAGL() {

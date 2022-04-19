@@ -35,13 +35,20 @@ public:
 protected:
 	class UPrimitiveComponent* Aircraft = nullptr;
 
+	void ApplyMoveForces(float deltaTime);
+	void UpdateRadAlt();
+
 	UPROPERTY(VisibleAnywhere)
 	FVector4 MoveIntent = FVector4(0.0f, 0.0f, 0.0f, 0.0f);//X, Y, Z are translation intents, W is yaw intent
 
-	float Roll = 0;
-	float Pitch = 0;
-	float CurrentRoll = 0;
-	float CurrentPitch = 0;
+
+	float InPlaneMaxMoveLimit = 10000000.0f;//In newtons(?)
+	float VerticalMaxMoveLimit = 1.0f;//Since hovering depends on ac weight, using -1.0 -> 1.0 to scale
+
+	float DesiredPitchDivider = 1000.0f;
+
+	const float MaxPitchRoll = 15.0f;
+
 
 	UPROPERTY(VisibleAnywhere)
 	FVector4 LastVelocity = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
