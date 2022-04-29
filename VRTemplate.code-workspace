@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"name": "VRTemplate",
+			"path": "."
+		},
+		{
+			"name": "UE4",
+			"path": "D:\\UE_4.27"
+		}
+	],
+	"settings": {
+		"typescript.tsc.autoDetect": "off",
+		"C_Cpp.default.forcedInclude": [
+			"${default}",
+			"D:\\UE_4.27Projects\\vr-template\\Intermediate\\Build\\Win64\\UE4Editor\\Development\\VRTemplate\\Definitions.VRTemplate.h",
+			"D:\\UE_4.27Projects\\vr-template\\Intermediate\\Build\\Win64\\VRTemplateEditor\\Development\\Engine\\SharedPCH.Engine.ShadowErrors.h"
+		]
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools",
+			"ms-dotnettools.csharp"
+		]
+	}
+}

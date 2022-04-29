@@ -6,9 +6,9 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "SimpleConstraint.generated.h"
 
-/**
- * 
- */
+
+
+
 UCLASS()
 class VRTEMPLATE_API USimpleConstraint : public UPhysicsConstraintComponent
 {
@@ -19,7 +19,8 @@ public:
 	static bool IsComponentViolated(UPrimitiveComponent* component, float* howCloseToViolating);
 	static TMap<USimpleConstraint*, UPrimitiveComponent*> ConstraintChild;
 	static TMap<USimpleConstraint*, UPrimitiveComponent*> ConstraintOwner;
-	
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	USimpleConstraint();
 	virtual void OnUnregister() override;
@@ -28,13 +29,23 @@ public:
 	void SetDistanceAllowed(float distanceAllowed);
 	bool IsViolated(float* howMuch);
 
-
+	UPROPERTY()
 	class UPrimitiveComponent* Owner=nullptr;
+
+	UPROPERTY()
 	class UPrimitiveComponent* Child=nullptr;
+
 	FName OwnerSocket;
 	FName ChildSocket;
 
+	FVector OwnerLastPosition;
+	FVector OwnerVelocity;
+	FVector ChildLastPosition;
+	FVector ChildVelocity;
+
 protected:
+	static FConstraintInstance MakeConstraintInstance(float distanceAllowed);
+
 	float DistanceAllowed = 0.0f;
 
 	float DistanceBeforeViolated = 20.0f;
